@@ -1,5 +1,7 @@
 # Focus Board – Dual UI Frontend Demo
 
+> [English](README.md) | [繁體中文](Readme_zh-tw.md)
+
 A **single-file frontend application** that automatically switches between:
 
 - **Modern UI (2026-style)** for modern browsers
@@ -49,6 +51,8 @@ Activated automatically in modern browsers.
 - Clean component structure
 - 2026-style visual design
 
+![Modern UI](demo-modern.png)
+
 ### Legacy Mode
 Activated automatically in Internet Explorer.
 
@@ -58,11 +62,15 @@ Activated automatically in Internet Explorer.
 - Simple, clean, early-2000s style UI
 - Designed to work with IE security restrictions
 
+![Legacy UI (IE)](demo-ie.png)
+
 ---
 
 ## 📂 Project Structure
 
 ```text
 .
-├── index.html   # Entire application (modern + legacy)
-└── README.md
+├── index.html          # Entire application (modern + legacy)
+├── README.md           # English documentation
+└── Readme_zh-tw.md     # Traditional Chinese documentation
+```

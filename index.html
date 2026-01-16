@@ -172,7 +172,7 @@
     }
     @media (prefers-color-scheme: light) { .m-mini { border: 1px solid rgba(0,0,0,.12); } }
 
-    .m-foot { margin-top: 14px; opacity: .85; font-size: 12px; }
+    .m-foot { margin-top: 14px; opacity: .85; font-size: 12px; text-align: center; }
     .m-kbd {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       padding: 2px 8px;
@@ -322,9 +322,9 @@
               <button class="m-btn m-btn-ghost" @click="dedupe">去除重複</button>
             </div>
           </div>
-        </div>
 
-        <div class="m-foot">模式：<strong>{{ modeLabel }}</strong>（自動偵測）。資料鍵：<span class="m-kbd">focus-board:v1</span></div>
+          <div class="m-foot">模式：<strong>{{ modeLabel }}</strong>（自動偵測）。資料鍵：<span class="m-kbd">focus-board:v1</span></div>
+        </div>
       </div>
     </div>
   </div>
