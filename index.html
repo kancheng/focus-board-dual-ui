@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Focus Board（新舊版自動切換）</title>
+
+  <!-- ===== 共用：最小 reset ===== -->
+  <style>
+    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", Arial, sans-serif; }
+    * { box-sizing: border-box; }
+    button, input { font-family: inherit; }
+  </style>
+
+  <!-- ===== 舊版（2000 年左右風格） ===== -->
+  <style>
+    #legacy-root { display: none; padding: 18px; background: #f2f2f2; color: #111; }
+    .legacy-wrap { width: 780px; margin: 0 auto; background: #fff; border: 1px solid #ccc; padding: 14px; }
+    .legacy-h1 { font-size: 20px; margin: 0 0 10px; }
+    .legacy-sub { font-size: 12px; color: #444; margin: 0 0 12px; }
+    .legacy-row { margin: 10px 0; }
+    .legacy-label { display: inline-block; width: 90px; font-size: 12px; color: #333; }
+    .legacy-input { width: 520px; padding: 6px; border: 1px solid #999; font-size: 12px; }
+    .legacy-btn { padding: 6px 10px; border: 1px solid #666; background: #e9e9e9; cursor: pointer; font-size: 12px; }
+    .legacy-btn:hover { background: #dcdcdc; }
+    .legacy-cols { margin-top: 12px; }
+    .legacy-col { float: left; width: 32%; margin-right: 2%; border: 1px solid #ccc; background: #fafafa; padding: 8px; min-height: 260px; }
+    .legacy-col:last-child { margin-right: 0; }
+    .legacy-col h2 { font-size: 13px; margin: 0 0 8px; }
+    .legacy-item { background: #fff; border: 1px solid #bbb; padding: 6px; margin: 6px 0; font-size: 12px; }
+    .legacy-actions { margin-top: 6px; }
+    .legacy-actions button { margin-right: 6px; }
+    .legacy-meta { font-size: 11px; color: #666; margin-top: 10px; }
+    .legacy-clear { clear: both; }
+    .legacy-stat { margin-top: 10px; padding: 8px; border: 1px dashed #999; background: #fffff5; font-size: 12px; }
+  </style>
+
+  <!-- ===== 新版（2026 風格） ===== -->
+  <style>
+    #modern-root { display: none; }
+
+    .m-page {
+      min-height: 100%;
+      padding: 28px;
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(120, 80, 255, .25), transparent 60%),
+        radial-gradient(900px 500px at 80% 20%, rgba(0, 190, 255, .22), transparent 55%),
+        radial-gradient(900px 700px at 50% 95%, rgba(255, 120, 180, .18), transparent 55%),
+        linear-gradient(180deg, #0b1020, #070a12);
+      color: #eaf0ff;
+    }
+
+    @media (prefers-color-scheme: light) {
+      .m-page {
+        background:
+          radial-gradient(1200px 600px at 20% 10%, rgba(120, 80, 255, .20), transparent 60%),
+          radial-gradient(900px 500px at 80% 20%, rgba(0, 190, 255, .16), transparent 55%),
+          radial-gradient(900px 700px at 50% 95%, rgba(255, 120, 180, .14), transparent 55%),
+          linear-gradient(180deg, #f7f8ff, #f0f3ff);
+        color: #0b1020;
+      }
+    }
+
+    .m-wrap { max-width: 1100px; margin: 0 auto; }
+    .m-top { display: flex; gap: 18px; align-items: flex-end; justify-content: space-between; margin-bottom: 18px; }
+    .m-title { margin: 0; font-size: 26px; letter-spacing: 0.2px; }
+    .m-sub { margin: 6px 0 0; opacity: 0.85; font-size: 13px; line-height: 1.35; }
+
+    .m-card {
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+    @media (prefers-color-scheme: light) {
+      .m-card { border: 1px solid rgba(0,0,0,.08); background: rgba(255,255,255,.75); box-shadow: 0 10px 30px rgba(0,0,0,.10); }
+    }
+
+    .m-toolbar { padding: 14px; display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+    .m-input {
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: inherit;
+      outline: none;
+    }
+    .m-input::placeholder { color: rgba(234,240,255,.55); }
+    @media (prefers-color-scheme: light) {
+      .m-input { background: rgba(255,255,255,.85); border: 1px solid rgba(0,0,0,.10); }
+      .m-input::placeholder { color: rgba(0,0,0,.45); }
+    }
+
+    .m-btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor: pointer;
+      color: #0b1020;
+      background: linear-gradient(135deg, rgba(0, 220, 255, .95), rgba(140, 90, 255, .95));
+      font-weight: 650;
+      letter-spacing: .2px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.22);
+      white-space: nowrap;
+    }
+    .m-btn:active { transform: translateY(1px); }
+
+    .m-btn-ghost {
+      background: transparent;
+      color: inherit;
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: none;
+      font-weight: 600;
+    }
+    @media (prefers-color-scheme: light) {
+      .m-btn-ghost { border: 1px solid rgba(0,0,0,.12); }
+    }
+
+    .m-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; padding: 14px; }
+    @media (max-width: 960px) { .m-grid { grid-template-columns: 1fr; } }
+
+    .m-col {
+      border-radius: 18px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      min-height: 340px;
+    }
+    @media (prefers-color-scheme: light) { .m-col { border: 1px solid rgba(0,0,0,.08); background: rgba(255,255,255,.65); } }
+
+    .m-colhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .m-coltitle { font-size: 14px; font-weight: 750; margin: 0; opacity: .95; }
+    .m-badge {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.12);
+      opacity: .9;
+    }
+    @media (prefers-color-scheme: light) { .m-badge { border: 1px solid rgba(0,0,0,.10); background: rgba(255,255,255,.78); } }
+
+    .m-item {
+      border-radius: 16px;
+      padding: 10px 10px 8px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.12);
+      margin-bottom: 10px;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .m-item:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(0,0,0,.18); }
+    @media (prefers-color-scheme: light) { .m-item { background: rgba(255,255,255,.82); border: 1px solid rgba(0,0,0,.08); } }
+
+    .m-itemtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .m-text { font-size: 13px; line-height: 1.4; margin: 0; }
+    .m-time { font-size: 11px; opacity: .7; margin-top: 6px; }
+    .m-actions { display: flex; gap: 6px; }
+
+    .m-mini {
+      border-radius: 12px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font-size: 12px;
+      opacity: .95;
+    }
+    @media (prefers-color-scheme: light) { .m-mini { border: 1px solid rgba(0,0,0,.12); } }
+
+    .m-foot { margin-top: 14px; opacity: .85; font-size: 12px; }
+    .m-kbd {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.14);
+    }
+    @media (prefers-color-scheme: light) { .m-kbd { border: 1px solid rgba(0,0,0,.10); background: rgba(255,255,255,.75); } }
+  </style>
+
+  <!-- ===== 入口偵測：IE -> legacy，其它 -> modern ===== -->
+  <script>
+    (function () {
+      var ua = navigator.userAgent;
+      var isIE = !!document.documentMode || ua.indexOf('MSIE ') > -1 || ua.indexOf('Trident/') > -1;
+      document.documentElement.setAttribute('data-app-mode', isIE ? 'legacy' : 'modern');
+      window.__APP_MODE__ = isIE ? 'legacy' : 'modern';
+    })();
+  </script>
+</head>
+
+<body>
+  <!-- ===================== 舊版（IE） ===================== -->
+  <div id="legacy-root">
+    <div class="legacy-wrap">
+      <h1 class="legacy-h1">Focus Board（舊版 / IE 相容）</h1>
+      <p class="legacy-sub">這是給 IE 的簡潔版本（ES5 + 原生 DOM）。資料會永久保存（localStorage / userData / cookie）。</p>
+
+      <div class="legacy-row">
+        <span class="legacy-label">新增待辦：</span>
+        <input id="lg-input" class="legacy-input" type="text" placeholder="例如：把模型推論流程寫成 README" />
+        <button id="lg-add" class="legacy-btn">新增</button>
+        <button id="lg-clear" class="legacy-btn">清空全部</button>
+      </div>
+
+      <div class="legacy-stat" id="lg-stat">載入中...</div>
+
+      <div class="legacy-cols">
+        <div class="legacy-col">
+          <h2>To do</h2>
+          <div id="lg-todo"></div>
+        </div>
+        <div class="legacy-col">
+          <h2>Doing</h2>
+          <div id="lg-doing"></div>
+        </div>
+        <div class="legacy-col">
+          <h2>Done</h2>
+          <div id="lg-done"></div>
+        </div>
+        <div class="legacy-clear"></div>
+      </div>
+
+      <div class="legacy-meta">小提示：每個項目可以按「→」往右移，按「←」往左移，按「刪除」移除。</div>
+    </div>
+  </div>
+
+  <!-- ===================== 新版（2026） ===================== -->
+  <div id="modern-root">
+    <div class="m-page">
+      <div class="m-wrap">
+        <div class="m-top">
+          <div>
+            <h1 class="m-title">Focus Board</h1>
+            <p class="m-sub">
+              2026 風格新版（Vue 3 + localStorage）。快速把待辦拆成 To do / Doing / Done。<br />
+              快捷鍵：<span class="m-kbd">Enter</span> 新增，<span class="m-kbd">Ctrl</span> + <span class="m-kbd">K</span> 聚焦輸入框。
+            </p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="m-btn m-btn-ghost" @click="exportJson">匯出 JSON</button>
+            <button class="m-btn m-btn-ghost" @click="importJson">匯入 JSON</button>
+          </div>
+        </div>
+
+        <div class="m-card" id="app">
+          <div class="m-toolbar">
+            <input class="m-input" ref="inputEl" v-model.trim="draft" @keydown.enter="add" placeholder="新增一個任務，例如：把 C# 推論流程做成多執行緒池" />
+            <button class="m-btn" @click="add">新增</button>
+            <button class="m-btn m-btn-ghost" @click="clearAll">清空</button>
+          </div>
+
+          <div class="m-grid">
+            <div class="m-col">
+              <div class="m-colhead">
+                <h2 class="m-coltitle">To do</h2>
+                <div class="m-badge">{{ countBy('todo') }}</div>
+              </div>
+              <div v-for="item in itemsBy('todo')" :key="item.id" class="m-item">
+                <div class="m-itemtop">
+                  <div style="min-width:0;">
+                    <p class="m-text">{{ item.text }}</p>
+                    <div class="m-time">{{ formatTime(item.createdAt) }}</div>
+                  </div>
+                  <div class="m-actions">
+                    <button class="m-mini" @click="move(item.id, 'doing')">→</button>
+                    <button class="m-mini" @click="remove(item.id)">刪除</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="m-col">
+              <div class="m-colhead">
+                <h2 class="m-coltitle">Doing</h2>
+                <div class="m-badge">{{ countBy('doing') }}</div>
+              </div>
+              <div v-for="item in itemsBy('doing')" :key="item.id" class="m-item">
+                <div class="m-itemtop">
+                  <div style="min-width:0;">
+                    <p class="m-text">{{ item.text }}</p>
+                    <div class="m-time">開始於 {{ formatTime(item.movedAt || item.createdAt) }}</div>
+                  </div>
+                  <div class="m-actions">
+                    <button class="m-mini" @click="move(item.id, 'todo')">←</button>
+                    <button class="m-mini" @click="move(item.id, 'done')">→</button>
+                    <button class="m-mini" @click="remove(item.id)">刪除</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="m-col">
+              <div class="m-colhead">
+                <h2 class="m-coltitle">Done</h2>
+                <div class="m-badge">{{ countBy('done') }}</div>
+              </div>
+              <div v-for="item in itemsBy('done')" :key="item.id" class="m-item">
+                <div class="m-itemtop">
+                  <div style="min-width:0;">
+                    <p class="m-text">{{ item.text }}</p>
+                    <div class="m-time">完成於 {{ formatTime(item.movedAt || item.createdAt) }}</div>
+                  </div>
+                  <div class="m-actions">
+                    <button class="m-mini" @click="move(item.id, 'doing')">←</button>
+                    <button class="m-mini" @click="remove(item.id)">刪除</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="m-toolbar" style="justify-content: space-between;">
+            <div style="opacity:.85; font-size:12px;">總數：{{ items.length }} ／ Doing 佔比：{{ doingRatio }}%</div>
+            <div style="display:flex; gap:10px;">
+              <button class="m-btn m-btn-ghost" @click="seedDemo">塞入範例</button>
+              <button class="m-btn m-btn-ghost" @click="dedupe">去除重複</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="m-foot">模式：<strong>{{ modeLabel }}</strong>（自動偵測）。資料鍵：<span class="m-kbd">focus-board:v1</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IE userData fallback storage element (hidden) -->
+  <div id="ie-userdata-store" style="display:none;"></div>
+
+  <!-- ====== 先顯示對應 root（避免閃爍）====== -->
+  <script>
+    (function () {
+      var mode = window.__APP_MODE__ || 'modern';
+      var legacyRoot = document.getElementById('legacy-root');
+      var modernRoot = document.getElementById('modern-root');
+      if (mode === 'legacy') {
+        legacyRoot.style.display = 'block';
+        modernRoot.style.display = 'none';
+      } else {
+        legacyRoot.style.display = 'none';
+        modernRoot.style.display = 'block';
+      }
+    })();
+  </script>
+
+  <!-- ====== 新版：動態載入 Vue 3（只有 modern 模式才會載入）====== -->
+  <script>
+    (function () {
+      var mode = window.__APP_MODE__ || 'modern';
+      if (mode === 'legacy') return;
+
+      var s = document.createElement('script');
+      s.src = 'https://unpkg.com/vue@3/dist/vue.global.prod.js';
+      s.onload = function () {
+        var STORAGE_KEY = 'focus-board:v1';
+
+        function load() {
+          try {
+            var raw = localStorage.getItem(STORAGE_KEY);
+            var arr = raw ? JSON.parse(raw) : [];
+            return Array.isArray(arr) ? arr : [];
+          } catch (e) {
+            return [];
+          }
+        }
+
+        function save(items) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        }
+
+        function uid() {
+          try {
+            if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+          } catch (e) {}
+          return String(Date.now()) + Math.random().toString(16).slice(2);
+        }
+
+        Vue.createApp({
+          data: function () {
+            return {
+              draft: '',
+              items: load(),
+              modeLabel: '新版（2026 / Vue 3）'
+            };
+          },
+          computed: {
+            doingRatio: function () {
+              var total = this.items.length || 1;
+              var doing = this.items.filter(function (x) { return x.status === 'doing'; }).length;
+              return Math.round((doing / total) * 100);
+            }
+          },
+          methods: {
+            persist: function () { save(this.items); },
+            focusInput: function () {
+              try {
+                if (this.$refs && this.$refs.inputEl && this.$refs.inputEl.focus) this.$refs.inputEl.focus();
+              } catch (e) {}
+            },
+            add: function () {
+              var text = (this.draft || '').trim();
+              if (!text) return;
+              this.items.unshift({
+                id: uid(),
+                text: text,
+                status: 'todo',
+                createdAt: Date.now(),
+                movedAt: null
+              });
+              this.draft = '';
+              this.persist();
+              this.focusInput();
+            },
+            remove: function (id) {
+              this.items = this.items.filter(function (x) { return x.id !== id; });
+              this.persist();
+            },
+            move: function (id, toStatus) {
+              var it = this.items.find(function (x) { return x.id === id; });
+              if (!it) return;
+              it.status = toStatus;
+              it.movedAt = Date.now();
+              this.persist();
+            },
+            itemsBy: function (status) {
+              return this.items.filter(function (x) { return x.status === status; });
+            },
+            countBy: function (status) {
+              return this.itemsBy(status).length;
+            },
+            formatTime: function (ts) {
+              var d = new Date(ts);
+              return d.toLocaleString();
+            },
+            clearAll: function () {
+              if (!confirm('確定要清空所有任務？')) return;
+              this.items = [];
+              this.persist();
+            },
+            seedDemo: function () {
+              var now = Date.now();
+              var demo = [
+                { text: '把推論流程寫成 README', status: 'todo' },
+                { text: '整理訓練資料夾結構', status: 'doing' },
+                { text: '提交一個小型 PR（UI 小修）', status: 'done' }
+              ].map(function (x, i) {
+                return {
+                  id: uid(),
+                  text: x.text,
+                  status: x.status,
+                  createdAt: now - (i + 1) * 3600 * 1000,
+                  movedAt: x.status === 'todo' ? null : (now - i * 1800 * 1000)
+                };
+              });
+              this.items = demo.concat(this.items);
+              this.persist();
+            },
+            dedupe: function () {
+              var seen = new Set();
+              this.items = this.items.filter(function (it) {
+                var key = String(it.text || '').trim().toLowerCase();
+                if (!key) return false;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              });
+              this.persist();
+            },
+            exportJson: function () {
+              var data = JSON.stringify(this.items, null, 2);
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(data).then(function () {
+                  alert('已複製到剪貼簿');
+                }, function () {
+                  prompt('瀏覽器不允許自動複製，請手動複製：', data);
+                });
+              } else {
+                prompt('請手動複製：', data);
+              }
+            },
+            importJson: function () {
+              var raw = prompt('貼上 JSON（會覆蓋現有資料）');
+              if (!raw) return;
+              try {
+                var arr = JSON.parse(raw);
+                if (!Array.isArray(arr)) throw new Error('not array');
+                this.items = arr.map(function (x) {
+                  var st = (x.status === 'todo' || x.status === 'doing' || x.status === 'done') ? x.status : 'todo';
+                  return {
+                    id: String(x.id || uid()),
+                    text: String(x.text || '').slice(0, 200),
+                    status: st,
+                    createdAt: Number(x.createdAt || Date.now()),
+                    movedAt: x.movedAt ? Number(x.movedAt) : null
+                  };
+                }).filter(function (x) { return x.text && x.text.trim(); });
+                this.persist();
+              } catch (e) {
+                alert('JSON 格式不正確');
+              }
+            }
+          },
+          mounted: function () {
+            var self = this;
+            window.addEventListener('keydown', function (e) {
+              if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+                e.preventDefault();
+                self.focusInput();
+              }
+            });
+            self.focusInput();
+          }
+        }).mount('#app');
+      };
+      document.head.appendChild(s);
+    })();
+  </script>
+
+  <!-- ====== 舊版：ES5 原生 JS（只在 legacy 模式執行，完整保存）====== -->
+  <script>
+    (function () {
+      if ((window.__APP_MODE__ || 'modern') !== 'legacy') return;
+
+      // --- JSON in very old IE ---
+      if (!window.JSON || !JSON.parse || !JSON.stringify) {
+        alert('此 IE 版本缺少 JSON，無法運行。建議使用 IE9+ 或啟用相容性設定。');
+        return;
+      }
+
+      var STORAGE_KEY = 'focus-board:v1';
+
+      // ========= Storage Adapter (IE-friendly, persistent) =========
+      function canUseLocalStorage() {
+        try {
+          var k = '__t__' + String(new Date().getTime());
+          localStorage.setItem(k, '1');
+          localStorage.removeItem(k);
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function cookieSet(name, value, days) {
+        var d = new Date();
+        d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+        document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + d.toUTCString() + '; path=/';
+      }
+
+      function cookieGet(name) {
+        var nameEq = name + '=';
+        var parts = document.cookie.split(';');
+        for (var i = 0; i < parts.length; i++) {
+          var c = parts[i];
+          while (c.charAt(0) === ' ') c = c.substring(1);
+          if (c.indexOf(nameEq) === 0) return decodeURIComponent(c.substring(nameEq.length));
+        }
+        return null;
+      }
+
+      function getUserDataStore() {
+        try {
+          var el = document.getElementById('ie-userdata-store');
+          if (!el) {
+            el = document.createElement('div');
+            el.id = 'ie-userdata-store';
+            el.style.display = 'none';
+            document.body.appendChild(el);
+          }
+          if (typeof el.addBehavior === 'function') {
+            el.addBehavior('#default#userData');
+            return el;
+          }
+        } catch (e) {}
+        return null;
+      }
+
+      function userDataGet(key) {
+        try {
+          var el = getUserDataStore();
+          if (!el) return null;
+          el.load('FocusBoardStore');
+          var v = el.getAttribute(key);
+          return v ? String(v) : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function userDataSet(key, value) {
+        try {
+          var el = getUserDataStore();
+          if (!el) return false;
+          el.setAttribute(key, String(value));
+          el.save('FocusBoardStore');
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function storageGetRaw() {
+        if (canUseLocalStorage()) {
+          try { return localStorage.getItem(STORAGE_KEY); } catch (e) {}
+        }
+        var ud = userDataGet(STORAGE_KEY);
+        if (ud !== null) return ud;
+        return cookieGet(STORAGE_KEY);
+      }
+
+      function storageSetRaw(raw) {
+        if (canUseLocalStorage()) {
+          try { localStorage.setItem(STORAGE_KEY, raw); return true; } catch (e) {}
+        }
+        if (userDataSet(STORAGE_KEY, raw)) return true;
+        try { cookieSet(STORAGE_KEY, raw, 365); return true; } catch (e) { return false; }
+      }
+
+      function load() {
+        try {
+          var raw = storageGetRaw();
+          var arr = raw ? JSON.parse(raw) : [];
+          return Object.prototype.toString.call(arr) === '[object Array]' ? arr : [];
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function save(items) {
+        try {
+          var raw = JSON.stringify(items);
+          var ok = storageSetRaw(raw);
+          if (!ok) {
+            alert('保存失敗：瀏覽器安全策略限制了 localStorage/userData/cookie。');
+          }
+        } catch (e) {
+          alert('保存失敗：資料序列化或儲存被限制。');
+        }
+      }
+
+      // ========= App (ES5) =========
+      function uid() { return String(new Date().getTime()) + String(Math.floor(Math.random() * 1000000)); }
+      function now() { return (new Date()).getTime(); }
+      function fmt(ts) {
+        var d = new Date(ts);
+        return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2);
+      }
+
+      var items = load();
+
+      var input = document.getElementById('lg-input');
+      var btnAdd = document.getElementById('lg-add');
+      var btnClear = document.getElementById('lg-clear');
+      var boxTodo = document.getElementById('lg-todo');
+      var boxDoing = document.getElementById('lg-doing');
+      var boxDone = document.getElementById('lg-done');
+      var stat = document.getElementById('lg-stat');
+
+      function count(status) {
+        var c = 0;
+        for (var i = 0; i < items.length; i++) if (items[i].status === status) c++;
+        return c;
+      }
+
+      function updateStat() {
+        var total = items.length;
+        var doing = count('doing');
+        var ratio = total ? Math.round((doing / total) * 100) : 0;
+        stat.innerHTML = '總數：' + total + '（To do: ' + count('todo') + ' / Doing: ' + doing + ' / Done: ' + count('done') + '）  Doing 佔比：' + ratio + '%';
+      }
+
+      function move(id, toStatus) {
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].id === id) {
+            items[i].status = toStatus;
+            items[i].movedAt = now();
+            break;
+          }
+        }
+        save(items);
+        render();
+      }
+
+      function remove(id) {
+        var next = [];
+        for (var i = 0; i < items.length; i++) if (items[i].id !== id) next.push(items[i]);
+        items = next;
+        save(items);
+        render();
+      }
+
+      function makeItemEl(it) {
+        var div = document.createElement('div');
+        div.className = 'legacy-item';
+
+        var t = document.createElement('div');
+        t.innerHTML = it.text;
+        div.appendChild(t);
+
+        var meta = document.createElement('div');
+        meta.style.fontSize = '11px';
+        meta.style.color = '#666';
+        meta.style.marginTop = '4px';
+        meta.innerHTML = (it.movedAt ? '更新：' + fmt(it.movedAt) : '建立：' + fmt(it.createdAt));
+        div.appendChild(meta);
+
+        var actions = document.createElement('div');
+        actions.className = 'legacy-actions';
+
+        if (it.status !== 'todo') {
+          var btnL = document.createElement('button');
+          btnL.className = 'legacy-btn';
+          btnL.innerHTML = '←';
+          btnL.onclick = function () {
+            if (it.status === 'doing') move(it.id, 'todo');
+            else if (it.status === 'done') move(it.id, 'doing');
+          };
+          actions.appendChild(btnL);
+        }
+
+        if (it.status !== 'done') {
+          var btnR = document.createElement('button');
+          btnR.className = 'legacy-btn';
+          btnR.innerHTML = '→';
+          btnR.onclick = function () {
+            if (it.status === 'todo') move(it.id, 'doing');
+            else if (it.status === 'doing') move(it.id, 'done');
+          };
+          actions.appendChild(btnR);
+        }
+
+        var btnDel = document.createElement('button');
+        btnDel.className = 'legacy-btn';
+        btnDel.innerHTML = '刪除';
+        btnDel.onclick = function () { remove(it.id); };
+        actions.appendChild(btnDel);
+
+        div.appendChild(actions);
+        return div;
+      }
+
+      function render() {
+        boxTodo.innerHTML = '';
+        boxDoing.innerHTML = '';
+        boxDone.innerHTML = '';
+
+        for (var i = 0; i < items.length; i++) {
+          var it = items[i];
+          var el = makeItemEl(it);
+          if (it.status === 'todo') boxTodo.appendChild(el);
+          else if (it.status === 'doing') boxDoing.appendChild(el);
+          else boxDone.appendChild(el);
+        }
+        updateStat();
+      }
+
+      function add() {
+        var text = (input.value || '').replace(/^\s+|\s+$/g, '');
+        if (!text) return;
+
+        items.unshift({
+          id: uid(),
+          text: text,
+          status: 'todo',
+          createdAt: now(),
+          movedAt: null
+        });
+
+        input.value = '';
+        save(items);
+        render();
+      }
+
+      btnAdd.onclick = add;
+      btnClear.onclick = function () {
+        if (!confirm('確定清空全部？')) return;
+        items = [];
+        save(items);
+        render();
+      };
+
+      input.onkeydown = function (e) {
+        e = e || window.event;
+        if (e.keyCode === 13) add();
+      };
+
+      render();
+    })();
+  </script>
+</body>
+</html>
